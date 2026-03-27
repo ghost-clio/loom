@@ -1,5 +1,4 @@
 'use client'
-export const runtime = 'edge';
 import { useState } from 'react'
 
 interface ProjectCard {
@@ -17,6 +16,17 @@ interface ProjectCard {
   owner?: { id: string; name: string; type: string; avatar_url?: string }
 }
 
+interface ColosseumResult {
+  slug: string
+  name: string
+  oneLiner: string
+  similarity: number
+  hackathon?: { name: string }
+  tracks?: { name: string }[]
+  links?: { github?: string | null; demo?: string | null; presentation?: string | null; colosseum?: string | null }
+  tags?: { problemTags?: string[]; techTags?: string[]; solutionTags?: string[] }
+}
+
 export default function DiscoverPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<{ loom: ProjectCard[]; ecosystem: ProjectCard[] }>({ loom: [], ecosystem: [] })
@@ -29,9 +39,36 @@ export default function DiscoverPage() {
     setLoading(true)
     setSearched(true)
     try {
-      const res = await fetch(`/api/v1/discover?q=${encodeURIComponent(query)}&limit=20`)
-      const data = await res.json()
-      setResults({ loom: data.data?.loom || [], ecosystem: data.data?.ecosystem || [] })
+      // Search both Loom projects and Colosseum ecosystem in parallel
+      const [loomRes, ecosystemRes] = await Promise.allSettled([
+        fetch(`/api/v1/projects?q=${encodeURIComponent(query)}&per_page=10`).then(r => r.json()),
+        fetch(`/api/colosseum/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query, limit: 15 }),
+        }).then(r => r.ok ? r.json() : { results: [] }),
+      ])
+
+      const loom = loomRes.status === 'fulfilled'
+        ? (loomRes.value.data || []).map((p: ProjectCard) => ({ ...p, source: 'loom' }))
+        : []
+
+      const ecosystem = ecosystemRes.status === 'fulfilled'
+        ? (ecosystemRes.value.results || []).map((p: ColosseumResult) => ({
+            id: `colosseum:${p.slug}`,
+            source: 'colosseum',
+            name: p.name,
+            description: p.oneLiner,
+            repo_url: p.links?.github || null,
+            demo_url: p.links?.demo || p.links?.presentation || null,
+            colosseum_url: p.links?.colosseum || `https://arena.colosseum.org/projects/explore/${p.slug}`,
+            hackathon: p.hackathon?.name || null,
+            tracks: p.tracks?.map(t => t.name) || [],
+            tags: [...(p.tags?.techTags || []), ...(p.tags?.problemTags || [])].slice(0, 8),
+          }))
+        : []
+
+      setResults({ loom, ecosystem })
     } catch {
       setResults({ loom: [], ecosystem: [] })
     }
