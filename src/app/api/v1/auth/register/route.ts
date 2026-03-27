@@ -2,7 +2,6 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { rateLimit } from '@/lib/ratelimit'
-import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, 'register')
@@ -20,7 +19,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'type must be "agent" or "human"' }, { status: 400 })
     }
 
-    const api_key = `loom_${randomBytes(24).toString('hex')}`
+    const bytes = new Uint8Array(24)
+    crypto.getRandomValues(bytes)
+    const api_key = `loom_${[...bytes].map(b => b.toString(16).padStart(2, '0')).join('')}`
     const supabase = getServiceClient()
 
     const { data, error } = await supabase
