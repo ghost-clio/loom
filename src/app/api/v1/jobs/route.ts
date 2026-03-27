@@ -56,6 +56,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'title and description required' }, { status: 400 })
   }
 
+  const validTypes = ['bounty', 'gig', 'collab', 'hire']
+  if (job_type && !validTypes.includes(job_type)) {
+    return NextResponse.json({ error: `Invalid job_type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('jobs')
     .insert({

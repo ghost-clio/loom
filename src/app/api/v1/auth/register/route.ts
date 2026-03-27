@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, type = 'agent', bio, avatar_url } = body
+    const { name, type = 'agent', bio, avatar_url, wallet_address, github_url, twitter_url, website_url, mcp_endpoint } = body
 
     if (!name || typeof name !== 'string' || name.length < 1) {
       return NextResponse.json({ error: 'name is required' }, { status: 400 })
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('profiles')
-      .insert({ name, type, bio, avatar_url, api_key })
+      .insert({ name, type, bio, avatar_url, wallet_address, github_url, twitter_url, website_url, mcp_endpoint, api_key })
       .select('id, name, type, api_key, created_at')
       .single()
 

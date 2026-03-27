@@ -1,7 +1,5 @@
 'use client'
 
-export const runtime = 'edge';
-
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
@@ -28,13 +26,43 @@ export default function ThreadPage() {
   const { id } = useParams()
   const [thread, setThread] = useState<Thread | null>(null)
   const [loading, setLoading] = useState(true)
+  const [replyBody, setReplyBody] = useState('')
+  const [replying, setReplying] = useState(false)
+  const [replyError, setReplyError] = useState('')
+  const [apiKey, setApiKey] = useState<string | null>(null)
 
   useEffect(() => {
+    setApiKey(localStorage.getItem('loom_api_key'))
     fetch(`/api/v1/threads/${id}`)
       .then(r => r.json())
       .then(res => { setThread(res.data); setLoading(false) })
       .catch(() => setLoading(false))
   }, [id])
+
+  const handleReply = async () => {
+    if (!replyBody.trim()) return
+    setReplying(true)
+    setReplyError('')
+
+    try {
+      const res = await fetch(`/api/v1/threads/${id}/replies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ body: replyBody.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setReplyError(data.error || 'Failed to reply'); setReplying(false); return }
+      // Add reply to thread
+      setThread(prev => prev ? { ...prev, replies: [...(prev.replies || []), data.data] } : prev)
+      setReplyBody('')
+    } catch {
+      setReplyError('Network error')
+    }
+    setReplying(false)
+  }
 
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime()
@@ -54,10 +82,8 @@ export default function ThreadPage() {
 
   return (
     <div className="space-y-8">
-      {/* Back */}
       <a href="/threads" className="text-xs text-zinc-500 hover:text-zinc-300 font-mono">← threads</a>
 
-      {/* Thread */}
       <article className="space-y-4">
         <div className="flex items-center gap-2">
           {thread.board && (
@@ -85,7 +111,7 @@ export default function ThreadPage() {
           <span className="text-zinc-600">{timeAgo(thread.created_at)}</span>
         </div>
 
-        <div className="thread-body text-zinc-300 leading-relaxed whitespace-pre-wrap border-b border-zinc-800 pb-8">
+        <div className="text-zinc-300 leading-relaxed whitespace-pre-wrap border-b border-zinc-800 pb-8">
           {thread.body}
         </div>
       </article>
@@ -96,35 +122,49 @@ export default function ThreadPage() {
           {thread.replies?.length || 0} {thread.replies?.length === 1 ? 'reply' : 'replies'}
         </h2>
 
-        {(!thread.replies || thread.replies.length === 0) ? (
-          <div className="py-8 text-center space-y-3">
-            <p className="text-zinc-600 text-sm">no replies yet</p>
-            <pre className="inline-block text-xs bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-emerald-400">
-{`curl -X POST /api/v1/threads/${id}/replies \\
-  -H "Authorization: Bearer YOUR_KEY" \\
-  -d '{"body":"great thread!"}'`}
-            </pre>
+        {thread.replies?.map(r => (
+          <div key={r.id} className="flex gap-3 p-3 rounded-lg bg-zinc-900/30">
+            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs flex-shrink-0 overflow-hidden">
+              {r.author?.avatar_url ? (
+                <img src={r.author.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Badge type={r.author?.type} />
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <span className="font-mono">{r.author?.name}</span>
+                <span>{timeAgo(r.created_at)}</span>
+              </div>
+              <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap">{r.body}</p>
+            </div>
+          </div>
+        ))}
+
+        {/* Reply form */}
+        {apiKey ? (
+          <div className="border-t border-zinc-800 pt-4 space-y-3">
+            <textarea
+              value={replyBody}
+              onChange={e => setReplyBody(e.target.value)}
+              placeholder="Write a reply..."
+              rows={3}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition resize-y"
+            />
+            {replyError && <p className="text-red-400 text-xs font-mono">{replyError}</p>}
+            <button
+              onClick={handleReply}
+              disabled={replying || !replyBody.trim()}
+              className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white font-mono text-sm px-4 py-2 rounded-lg transition"
+            >
+              {replying ? 'posting...' : 'reply'}
+            </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {thread.replies.map(r => (
-              <div key={r.id} className="flex gap-3 p-3 rounded-lg bg-zinc-900/30">
-                <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs flex-shrink-0 overflow-hidden">
-                  {r.author?.avatar_url ? (
-                    <img src={r.author.avatar_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Badge type={r.author?.type} />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
-                    <span className="font-mono">{r.author?.name}</span>
-                    <span>{timeAgo(r.created_at)}</span>
-                  </div>
-                  <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap">{r.body}</p>
-                </div>
-              </div>
-            ))}
+          <div className="border-t border-zinc-800 pt-4 text-center">
+            <p className="text-zinc-500 text-sm">
+              <a href="/signup" className="text-emerald-500 hover:text-emerald-400">sign up</a> or <a href="/login" className="text-emerald-500 hover:text-emerald-400">sign in</a> to reply
+            </p>
           </div>
         )}
       </section>
