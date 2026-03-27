@@ -36,28 +36,116 @@ function ExpandableText({ text, maxLen = 200 }: { text: string; maxLen?: number 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [apiKey, setApiKey] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ name: '', description: '', repo_url: '', demo_url: '', stack: '', tags: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
+    setApiKey(localStorage.getItem('loom_api_key'))
     fetch('/api/v1/projects?per_page=50')
       .then(r => r.json())
       .then(res => { setProjects(res.data || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
+  const handleSubmit = async () => {
+    if (!form.name.trim() || !form.description.trim()) { setError('Name and description required'); return }
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/v1/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          description: form.description.trim(),
+          repo_url: form.repo_url.trim() || undefined,
+          demo_url: form.demo_url.trim() || undefined,
+          stack: form.stack.split(',').map(s => s.trim()).filter(Boolean),
+          tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Failed'); setSubmitting(false); return }
+      setProjects(prev => [data.data, ...prev])
+      setShowForm(false)
+      setForm({ name: '', description: '', repo_url: '', demo_url: '', stack: '', tags: '' })
+    } catch {
+      setError('Network error')
+    }
+    setSubmitting(false)
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="font-mono text-2xl font-bold">projects</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-mono text-2xl font-bold">projects</h1>
+        {apiKey && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="text-sm font-mono px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-emerald-600 text-zinc-400 hover:text-emerald-400 transition"
+          >
+            + share project
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-zinc-500 font-mono mb-1">name *</label>
+              <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+                placeholder="my-project" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 font-mono mb-1">repo url</label>
+              <input type="text" value={form.repo_url} onChange={e => setForm({...form, repo_url: e.target.value})}
+                placeholder="https://github.com/..." className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-500 font-mono mb-1">description *</label>
+            <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+              placeholder="What does it do?" rows={3}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition resize-y" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs text-zinc-500 font-mono mb-1">demo url</label>
+              <input type="text" value={form.demo_url} onChange={e => setForm({...form, demo_url: e.target.value})}
+                placeholder="https://..." className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 font-mono mb-1">stack <span className="text-zinc-700">(comma sep)</span></label>
+              <input type="text" value={form.stack} onChange={e => setForm({...form, stack: e.target.value})}
+                placeholder="next.js, supabase" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-500 font-mono mb-1">tags <span className="text-zinc-700">(comma sep)</span></label>
+              <input type="text" value={form.tags} onChange={e => setForm({...form, tags: e.target.value})}
+                placeholder="defi, mcp" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition" />
+            </div>
+          </div>
+          {error && <p className="text-red-400 text-xs font-mono">{error}</p>}
+          <div className="flex gap-2">
+            <button onClick={handleSubmit} disabled={submitting}
+              className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white font-mono text-xs px-3 py-1.5 rounded-lg transition">
+              {submitting ? 'sharing...' : 'share project'}
+            </button>
+            <button onClick={() => setShowForm(false)}
+              className="text-zinc-500 hover:text-zinc-400 font-mono text-xs px-3 py-1.5 transition">cancel</button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-zinc-500 font-mono text-sm">loading...</p>
       ) : projects.length === 0 ? (
         <div className="text-center py-16 space-y-4">
-          <p className="text-zinc-500 font-mono">no projects yet</p>
-          <pre className="inline-block text-xs bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-emerald-400">
-{`curl -X POST /api/v1/projects \\
-  -H "Authorization: Bearer YOUR_KEY" \\
-  -d '{"name":"my-tool","description":"does cool things","repo_url":"https://github.com/..."}'`}
-          </pre>
+          <p className="text-zinc-500 font-mono">no projects yet — be the first to share one</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -84,13 +172,10 @@ export default function ProjectsPage() {
 
               <div className="flex gap-3 text-xs">
                 {p.repo_url && (
-                  <a href={p.repo_url} className="text-zinc-500 hover:text-emerald-400 transition" target="_blank">repo ↗</a>
+                  <span className="text-zinc-500">repo ↗</span>
                 )}
                 {p.demo_url && (
-                  <a href={p.demo_url} className="text-zinc-500 hover:text-emerald-400 transition" target="_blank">demo ↗</a>
-                )}
-                {p.mcp_endpoint && (
-                  <span className="text-zinc-600 font-mono">mcp: {p.mcp_endpoint}</span>
+                  <span className="text-zinc-500">demo ↗</span>
                 )}
               </div>
             </a>
