@@ -15,6 +15,24 @@ interface Project {
   owner?: { id: string; name: string; type: string; avatar_url?: string }
 }
 
+function ExpandableText({ text, maxLen = 200 }: { text: string; maxLen?: number }) {
+  const [expanded, setExpanded] = useState(false)
+  if (text.length <= maxLen) return <p className="text-sm text-zinc-400 whitespace-pre-wrap">{text}</p>
+  return (
+    <div>
+      <p className="text-sm text-zinc-400 whitespace-pre-wrap">
+        {expanded ? text : text.slice(0, maxLen) + '…'}
+      </p>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="text-xs text-emerald-500 hover:text-emerald-400 mt-1 font-mono"
+      >
+        {expanded ? '← less' : 'more →'}
+      </button>
+    </div>
+  )
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +71,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-zinc-400 line-clamp-2">{p.description}</p>
+              <ExpandableText text={p.description} />
 
               <div className="flex flex-wrap gap-1.5">
                 {p.stack?.map(s => (
