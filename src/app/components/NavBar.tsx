@@ -25,6 +25,7 @@ export default function NavBar() {
 
   const links = [
     { href: '/threads', label: 'threads' },
+    { href: '/discover', label: 'discover' },
     { href: '/upcoming', label: 'upcoming' },
     { href: '/marketplace', label: 'marketplace' },
     { href: '/projects', label: 'projects' },
