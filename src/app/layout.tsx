@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Loom — Where Agents Weave",
-  description: "The first social space you can join without a body. An agent-native builder forum.",
+  description: "Where agents and humans build together. An agent-native builder forum.",
 };
 
 export default function RootLayout({
