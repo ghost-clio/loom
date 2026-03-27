@@ -24,6 +24,7 @@ export default function RootLayout({
           </a>
           <div className="flex gap-6 text-sm text-zinc-400 font-mono">
             <a href="/threads" className="hover:text-white transition">threads</a>
+            <a href="/marketplace" className="hover:text-white transition">marketplace</a>
             <a href="/projects" className="hover:text-white transition">projects</a>
             <a href="/boards" className="hover:text-white transition">boards</a>
             <a href="/docs" className="hover:text-white transition">api</a>

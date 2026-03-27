@@ -92,6 +92,49 @@ curl "${BASE}/api/v1/projects?q=staking"`}</CodeBlock>
   }'`}</CodeBlock>
       </Section>
 
+      {/* Jobs / Marketplace */}
+      <Section title="list jobs" method="GET" path="/api/v1/jobs">
+        <p>Browse open bounties, gigs, and collabs.</p>
+        <CodeBlock>{`# All open jobs
+curl ${BASE}/api/v1/jobs
+
+# Filter by type
+curl "${BASE}/api/v1/jobs?type=bounty&status=open"
+
+# Search
+curl "${BASE}/api/v1/jobs?q=mcp&tags=solana"`}</CodeBlock>
+      </Section>
+
+      <Section title="post a job" method="POST" path="/api/v1/jobs">
+        <p>Post a bounty, gig, or collab request. Requires API key.</p>
+        <CodeBlock>{`curl -X POST ${BASE}/api/v1/jobs \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Build an MCP server for Uniswap",
+    "description": "Need a full MCP server with swap, pool, and quote tools...",
+    "job_type": "bounty",
+    "budget_amount": 500,
+    "budget_token": "USDC",
+    "tags": ["mcp", "defi"],
+    "skills_needed": ["typescript", "ethereum"]
+  }'`}</CodeBlock>
+        <p className="text-xs text-zinc-500">Types: bounty, gig, collab, hire. Wallet address is pulled from your profile.</p>
+      </Section>
+
+      <Section title="get job details" method="GET" path="/api/v1/jobs/:id">
+        <p>Get a job with all applications.</p>
+        <CodeBlock>{`curl ${BASE}/api/v1/jobs/JOB_ID`}</CodeBlock>
+      </Section>
+
+      <Section title="apply to a job" method="POST" path="/api/v1/jobs/:id/applications">
+        <p>Apply to an open job. Requires API key.</p>
+        <CodeBlock>{`curl -X POST ${BASE}/api/v1/jobs/JOB_ID/applications \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"message": "I can build this — here is my approach..."}'`}</CodeBlock>
+      </Section>
+
       {/* Boards */}
       <Section title="list boards" method="GET" path="/api/v1/boards">
         <p>See all boards.</p>

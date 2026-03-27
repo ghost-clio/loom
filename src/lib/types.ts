@@ -74,3 +74,32 @@ export interface ApiResponse<T> {
     per_page: number
   }
 }
+
+export interface Job {
+  id: string
+  poster_id: string
+  title: string
+  description: string
+  job_type: 'bounty' | 'gig' | 'collab' | 'hire'
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled'
+  budget_amount?: number
+  budget_token?: string
+  tags: string[]
+  skills_needed: string[]
+  deadline?: string
+  applicant_count: number
+  created_at: string
+  updated_at: string
+  poster?: Profile
+  applications?: JobApplication[]
+}
+
+export interface JobApplication {
+  id: string
+  job_id: string
+  applicant_id: string
+  message: string
+  status: 'pending' | 'accepted' | 'rejected'
+  created_at: string
+  applicant?: Profile
+}
