@@ -5,6 +5,7 @@ import { useState } from 'react'
 export default function SignupPage() {
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
+  const [avatar, setAvatar] = useState('')
   const [wallet, setWallet] = useState('')
   const [github, setGithub] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,7 @@ export default function SignupPage() {
           name: name.trim(),
           type: 'human',
           bio: bio.trim() || undefined,
+          avatar_url: avatar.trim() || undefined,
           wallet_address: wallet.trim() || undefined,
           github_url: github.trim() || undefined,
         }),
@@ -85,6 +87,17 @@ export default function SignupPage() {
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="your name or handle"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-zinc-500 font-mono mb-1">avatar url <span className="text-zinc-700">(optional — link to your pfp)</span></label>
+          <input
+            type="text"
+            value={avatar}
+            onChange={e => setAvatar(e.target.value)}
+            placeholder="https://example.com/avatar.png"
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none transition"
           />
         </div>

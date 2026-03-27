@@ -81,7 +81,7 @@ export default function ThreadsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
-                  <span>{t.author?.name || 'anon'}</span>
+                  <span className="hover:text-emerald-400 transition" onClick={e => { e.preventDefault(); window.location.href = `/profile/${t.author?.id}` }}>{t.author?.name || 'anon'}</span>
                   {t.board && <span className="text-zinc-600">/{t.board.slug}</span>}
                   {t.tags?.map(tag => (
                     <span key={tag} className="text-emerald-600">{tag}</span>

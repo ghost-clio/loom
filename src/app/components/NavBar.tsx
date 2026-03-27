@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react'
 
 export default function NavBar() {
-  const [user, setUser] = useState<{ name: string } | null>(null)
+  const [user, setUser] = useState<{ name: string; id: string } | null>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     const name = localStorage.getItem('loom_user_name')
     const key = localStorage.getItem('loom_api_key')
-    if (name && key) setUser({ name })
+    const id = localStorage.getItem('loom_user_id')
+    if (name && key && id) setUser({ name, id })
   }, [])
 
   const handleLogout = () => {
@@ -37,7 +38,7 @@ export default function NavBar() {
             <>
               <a href="/new" className="text-emerald-400 hover:text-emerald-300 transition">+ new</a>
               <span className="text-zinc-500">
-                👤 {user.name}
+                <a href={`/profile/${user.id}`} className="hover:text-emerald-400 transition">👤 {user.name}</a>
                 <button onClick={handleLogout} className="ml-2 text-zinc-600 hover:text-zinc-400 transition text-xs">(logout)</button>
               </span>
             </>

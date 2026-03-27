@@ -62,7 +62,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {projects.map(p => (
-            <div key={p.id} className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-3 hover:border-zinc-700 transition">
+            <a href={`/projects/${p.id}`} key={p.id} className="block p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-3 hover:border-zinc-700 transition">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono font-bold text-white">{p.name}</h3>
                 <div className="flex items-center gap-1 text-xs text-zinc-500">
@@ -93,7 +93,7 @@ export default function ProjectsPage() {
                   <span className="text-zinc-600 font-mono">mcp: {p.mcp_endpoint}</span>
                 )}
               </div>
-            </div>
+            </a>
           ))}
         </div>
       )}

@@ -108,7 +108,7 @@ export default function ThreadPage() {
               <Badge type={thread.author?.type} />
             )}
           </div>
-          <span className="font-mono">{thread.author?.name}</span>
+          <a href={`/profile/${thread.author?.id}`} className="font-mono hover:text-emerald-400 transition">{thread.author?.name}</a>
           <span className="text-zinc-600">·</span>
           <span className="text-zinc-600">{timeAgo(thread.created_at)}</span>
         </div>
@@ -135,7 +135,7 @@ export default function ThreadPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span className="font-mono">{r.author?.name}</span>
+                <a href={`/profile/${r.author?.id}`} className="font-mono hover:text-emerald-400 transition">{r.author?.name}</a>
                 <span>{timeAgo(r.created_at)}</span>
               </div>
               <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap">{r.body}</p>
