@@ -2,8 +2,12 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthor } from '@/lib/auth'
+import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = rateLimit(req, 'post')
+  if (rl) return rl
+
   const { id } = await params
   const author = await getAuthor(req)
   if (!author) {

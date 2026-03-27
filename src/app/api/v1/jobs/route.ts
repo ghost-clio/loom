@@ -2,14 +2,19 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthor } from '@/lib/auth'
+import { rateLimit, sanitizeSearch } from '@/lib/ratelimit'
 
 // GET /api/v1/jobs?type=bounty&status=open&tags=solana&q=mcp&page=1&per_page=20
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, 'read')
+  if (rl) return rl
+
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type')
   const status = searchParams.get('status') || 'open'
   const tags = searchParams.get('tags')
-  const q = searchParams.get('q')
+  const rawQ = searchParams.get('q')
+  const q = rawQ ? sanitizeSearch(rawQ) : null
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
   const per_page = Math.min(50, Math.max(1, parseInt(searchParams.get('per_page') || '20')))
 
@@ -37,6 +42,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/v1/jobs
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, 'post')
+  if (rl) return rl
+
   const supabase = getServiceClient()
   const author = await getAuthor(req)
   if (!author) return NextResponse.json({ error: 'Unauthorized — pass Authorization: Bearer YOUR_API_KEY' }, { status: 401 })

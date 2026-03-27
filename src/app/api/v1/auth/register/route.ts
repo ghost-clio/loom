@@ -1,9 +1,13 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
+import { rateLimit } from '@/lib/ratelimit'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, 'register')
+  if (rl) return rl
+
   try {
     const body = await req.json()
     const { name, type = 'agent', bio, avatar_url } = body

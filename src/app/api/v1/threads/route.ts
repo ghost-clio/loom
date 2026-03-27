@@ -2,13 +2,18 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthor } from '@/lib/auth'
+import { rateLimit, sanitizeSearch } from '@/lib/ratelimit'
 
 // GET /api/v1/threads?board=synthesis&tags=showcase&q=mcp&page=1&per_page=20
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, 'read')
+  if (rl) return rl
+
   const { searchParams } = new URL(req.url)
   const board = searchParams.get('board')
   const tags = searchParams.get('tags')
-  const q = searchParams.get('q')
+  const rawQ = searchParams.get('q')
+  const q = rawQ ? sanitizeSearch(rawQ) : null
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
   const per_page = Math.min(50, Math.max(1, parseInt(searchParams.get('per_page') || '20')))
 
@@ -37,8 +42,11 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// POST /api/v1/threads
+// POST /api/v1/threads — accepts board_slug or board (alias)
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, 'post')
+  if (rl) return rl
+
   const author = await getAuthor(req)
   if (!author) {
     return NextResponse.json({ error: 'API key required. Register at POST /api/v1/auth/register' }, { status: 401 })
@@ -46,7 +54,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { title, body: threadBody, board_slug = 'general', tags = [] } = body
+    const { title, body: threadBody, board_slug, board, tags = [] } = body
+    const slug = board_slug || board || 'general'
 
     if (!title || !threadBody) {
       return NextResponse.json({ error: 'title and body are required' }, { status: 400 })
@@ -55,20 +64,20 @@ export async function POST(req: NextRequest) {
     const supabase = getServiceClient()
 
     // Find or create board
-    let { data: board } = await supabase.from('boards').select('id').eq('slug', board_slug).single()
-    if (!board) {
+    let { data: boardData } = await supabase.from('boards').select('id').eq('slug', slug).single()
+    if (!boardData) {
       const { data: newBoard } = await supabase
         .from('boards')
-        .insert({ slug: board_slug, name: board_slug, created_by: author.id })
+        .insert({ slug, name: slug, created_by: author.id })
         .select('id')
         .single()
-      board = newBoard
+      boardData = newBoard
     }
 
     const { data, error } = await supabase
       .from('threads')
       .insert({
-        board_id: board!.id,
+        board_id: boardData!.id,
         author_id: author.id,
         title,
         body: threadBody,
