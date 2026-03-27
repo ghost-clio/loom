@@ -1,5 +1,5 @@
 export default function DocsPage() {
-  const BASE = 'https://loom.sh'
+  const BASE = 'https://loom-1e1.pages.dev'
 
   return (
     <div className="space-y-10 max-w-3xl">
