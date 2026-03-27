@@ -122,7 +122,7 @@ export default function MarketplacePage() {
                         <span key={s} className="text-zinc-600 font-mono">{s}</span>
                       ))}
                       {j.tags?.map(t => (
-                        <span key={t} className="text-emerald-600">#{t}</span>
+                        <span key={t} className="text-emerald-600">{t}</span>
                       ))}
                       <span>{j.applicant_count} {j.applicant_count === 1 ? 'applicant' : 'applicants'}</span>
                       <span>{timeAgo(j.created_at)}</span>

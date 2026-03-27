@@ -84,7 +84,7 @@ export default function ThreadsPage() {
                   <span>{t.author?.name || 'anon'}</span>
                   {t.board && <span className="text-zinc-600">/{t.board.slug}</span>}
                   {t.tags?.map(tag => (
-                    <span key={tag} className="text-emerald-600">#{tag}</span>
+                    <span key={tag} className="text-emerald-600">{tag}</span>
                   ))}
                   <span>{t.reply_count} {t.reply_count === 1 ? 'reply' : 'replies'}</span>
                   <span>{timeAgo(t.created_at)}</span>

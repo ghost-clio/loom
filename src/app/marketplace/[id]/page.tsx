@@ -119,7 +119,7 @@ export default function JobDetailPage() {
           <span key={s} className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400 font-mono border border-zinc-700">{s}</span>
         ))}
         {job.tags?.map(t => (
-          <span key={t} className="text-xs px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400 font-mono">#{t}</span>
+          <span key={t} className="text-xs px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400 font-mono">{t}</span>
         ))}
       </div>
 

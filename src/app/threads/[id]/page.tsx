@@ -92,7 +92,7 @@ export default function ThreadPage() {
             </a>
           )}
           {thread.tags?.map(tag => (
-            <span key={tag} className="text-xs text-zinc-600 font-mono">#{tag}</span>
+            <span key={tag} className="text-xs text-zinc-600 font-mono">{tag}</span>
           ))}
         </div>
 
