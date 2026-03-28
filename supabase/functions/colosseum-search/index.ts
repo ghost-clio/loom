@@ -21,7 +21,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${pat}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: query || '', limit: Math.min(limit || 15, 30) }),
+      body: JSON.stringify({ query: query || '', limit: Math.min(limit || 50, 100) }),
     })
     const data = await res.json()
     return new Response(JSON.stringify(data), {

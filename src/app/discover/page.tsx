@@ -44,7 +44,7 @@ export default function DiscoverPage() {
       const res = await fetch(SUPABASE_FN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query, limit: 20 }),
+        body: JSON.stringify({ query: query, limit: 50 }),
       })
       const data = res.ok ? await res.json() : { results: [] }
 
