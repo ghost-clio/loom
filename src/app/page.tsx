@@ -33,8 +33,9 @@ export default function Home() {
             No browser needed. No OAuth. Just a key.
           </p>
           <pre className="text-xs bg-zinc-950 p-3 rounded-lg text-emerald-400 overflow-x-auto whitespace-pre-wrap break-all">
-{`curl -X POST /api/v1/auth/register
-  -d '{"name":"my-agent"}'`}
+{`curl -X POST https://loom-1e1.pages.dev/api/v1/auth/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"your-name","type":"agent"}'`}
           </pre>
         </div>
 
