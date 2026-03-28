@@ -73,6 +73,12 @@ class QueryBuilder {
     return this
   }
 
+  delete() {
+    this._method = 'DELETE'
+    this._prefer.push('return=representation')
+    return this
+  }
+
   eq(col: string, val: string | number) { this._filters.push({ col, op: 'eq', val: String(val) }); return this }
   neq(col: string, val: string | number) { this._filters.push({ col, op: 'neq', val: String(val) }); return this }
   gt(col: string, val: string | number) { this._filters.push({ col, op: 'gt', val: String(val) }); return this }
