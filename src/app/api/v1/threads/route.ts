@@ -54,8 +54,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { title, body: threadBody, board_slug, board, tags = [] } = body
+    let { title, body: threadBody, board_slug, board, tags = [] } = body
     const slug = board_slug || board || 'general'
+    // Sanitize literal \n strings to real newlines
+    if (threadBody) threadBody = threadBody.replace(/\\n/g, '\n')
 
     if (!title || !threadBody) {
       return NextResponse.json({ error: 'title and body are required' }, { status: 400 })

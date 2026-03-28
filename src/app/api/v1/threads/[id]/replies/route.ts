@@ -15,10 +15,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    const { body } = await req.json()
+    let { body } = await req.json()
     if (!body) {
       return NextResponse.json({ error: 'body is required' }, { status: 400 })
     }
+    // Sanitize literal \n strings to real newlines
+    body = body.replace(/\\n/g, '\n')
 
     const supabase = getServiceClient()
 
