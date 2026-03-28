@@ -14,14 +14,14 @@ serve(async (req) => {
   if (!api || !pat) return new Response(JSON.stringify({ results: [] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   try {
-    const { query, limit } = await req.json()
+    const { query, limit, offset } = await req.json()
     const res = await fetch(`${api}/search/projects`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${pat}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: query || '', limit: Math.min(limit || 50, 100) }),
+      body: JSON.stringify({ query: query || '', limit: Math.min(limit || 20, 50), offset: offset || 0 }),
     })
     const data = await res.json()
     return new Response(JSON.stringify(data), {

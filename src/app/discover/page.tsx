@@ -27,48 +27,78 @@ interface ColosseumResult {
   tags?: { problemTags?: string[]; techTags?: string[]; solutionTags?: string[] }
 }
 
+  const PAGE_SIZE = 20
+
 export default function DiscoverPage() {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<{ loom: ProjectCard[]; ecosystem: ProjectCard[] }>({ loom: [], ecosystem: [] })
+  const [results, setResults] = useState<ProjectCard[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [offset, setOffset] = useState(0)
+  const [currentQuery, setCurrentQuery] = useState('')
 
   const SUPABASE_FN = 'https://mfxnfwvnveyinhtghwbl.supabase.co/functions/v1/colosseum-search'
+
+  function transformResults(raw: ColosseumResult[]): ProjectCard[] {
+    return raw.map((p) => ({
+      id: `colosseum:${p.slug}`,
+      source: 'colosseum',
+      name: p.name,
+      description: p.oneLiner,
+      repo_url: p.links?.github || null,
+      demo_url: p.links?.demo || p.links?.presentation || null,
+      colosseum_url: p.links?.colosseum || `https://arena.colosseum.org/projects/explore/${p.slug}`,
+      hackathon: p.hackathon?.name || null,
+      tracks: p.tracks?.map((t: { name: string }) => t.name) || [],
+      tags: [...(p.tags?.techTags || []), ...(p.tags?.problemTags || [])].slice(0, 8),
+    }))
+  }
+
+  async function fetchPage(q: string, pageOffset: number) {
+    const res = await fetch(SUPABASE_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, limit: PAGE_SIZE, offset: pageOffset }),
+    })
+    const data = res.ok ? await res.json() : { results: [] }
+    return data.results || []
+  }
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
     setLoading(true)
     setSearched(true)
+    setCurrentQuery(query)
+    setOffset(0)
     try {
-      const res = await fetch(SUPABASE_FN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query, limit: 50 }),
-      })
-      const data = res.ok ? await res.json() : { results: [] }
-
-      const ecosystem = (data.results || []).map((p: ColosseumResult) => ({
-        id: `colosseum:${p.slug}`,
-        source: 'colosseum',
-        name: p.name,
-        description: p.oneLiner,
-        repo_url: p.links?.github || null,
-        demo_url: p.links?.demo || p.links?.presentation || null,
-        colosseum_url: p.links?.colosseum || `https://arena.colosseum.org/projects/explore/${p.slug}`,
-        hackathon: p.hackathon?.name || null,
-        tracks: p.tracks?.map((t: { name: string }) => t.name) || [],
-        tags: [...(p.tags?.techTags || []), ...(p.tags?.problemTags || [])].slice(0, 8),
-      }))
-
-      setResults({ loom: [], ecosystem })
+      const raw = await fetchPage(query, 0)
+      setResults(transformResults(raw))
+      setHasMore(raw.length >= PAGE_SIZE)
+      setOffset(PAGE_SIZE)
     } catch {
-      setResults({ loom: [], ecosystem: [] })
+      setResults([])
+      setHasMore(false)
     }
     setLoading(false)
   }
 
-  const total = results.ecosystem.length
+  async function loadMore() {
+    setLoadingMore(true)
+    try {
+      const raw = await fetchPage(currentQuery, offset)
+      setResults(prev => [...prev, ...transformResults(raw)])
+      setHasMore(raw.length >= PAGE_SIZE)
+      setOffset(prev => prev + PAGE_SIZE)
+    } catch {
+      setHasMore(false)
+    }
+    setLoadingMore(false)
+  }
+
+  const total = results.length
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-12 space-y-8">
@@ -101,14 +131,25 @@ export default function DiscoverPage() {
         <p className="text-center text-zinc-500 py-8">No results for &quot;{query}&quot;</p>
       )}
 
-      {results.ecosystem.length > 0 && (
+      {results.length > 0 && (
         <section className="space-y-4">
           <h2 className="font-mono text-lg text-white">
-            {results.ecosystem.length} projects <span className="text-zinc-500 text-sm">from Colosseum hackathons</span>
+            {results.length} projects <span className="text-zinc-500 text-sm">from Colosseum hackathons</span>
           </h2>
           <div className="grid gap-4">
-            {results.ecosystem.map(p => <EcosystemCard key={p.id} project={p} />)}
+            {results.map(p => <EcosystemCard key={p.id} project={p} />)}
           </div>
+          {hasMore && (
+            <div className="text-center pt-4">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-6 py-2.5 rounded-lg border border-zinc-700 hover:border-emerald-600 text-zinc-400 hover:text-emerald-400 font-mono text-sm transition disabled:opacity-50"
+              >
+                {loadingMore ? 'loading...' : 'load more'}
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -129,25 +170,6 @@ export default function DiscoverPage() {
         </div>
       )}
     </main>
-  )
-}
-
-function LoomCard({ project: p }: { project: ProjectCard }) {
-  return (
-    <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/50 space-y-2">
-      <div className="flex items-center justify-between">
-        <h3 className="font-mono font-bold text-white">{p.name}</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/50 text-emerald-400 border border-emerald-800">loom</span>
-      </div>
-      <p className="text-sm text-zinc-400">{p.description}</p>
-      {p.owner && (
-        <p className="text-xs text-zinc-500">by {p.owner.type === 'agent' ? '🤖' : '👤'} {p.owner.name}</p>
-      )}
-      <div className="flex gap-2 flex-wrap">
-        {p.repo_url && <a href={p.repo_url} target="_blank" className="text-xs text-emerald-400 hover:underline">repo →</a>}
-        {p.demo_url && <a href={p.demo_url} target="_blank" className="text-xs text-emerald-400 hover:underline">demo →</a>}
-      </div>
-    </div>
   )
 }
 
