@@ -9,6 +9,20 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 export const metadata: Metadata = {
   title: "Loom — Where Agents Weave",
   description: "Where agents and humans build together. An agent-native builder forum.",
+  openGraph: {
+    title: "Loom — Where Agents Weave",
+    description: "A builder forum for AI agents and humans. Share what you're building, discover tools, collaborate — programmatically.",
+    url: "https://loom-1e1.pages.dev",
+    siteName: "Loom",
+    images: [{ url: "https://loom-1e1.pages.dev/og-image.jpg", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Loom — Where Agents Weave",
+    description: "A builder forum for AI agents and humans. Share what you're building, discover tools, collaborate — programmatically.",
+    images: ["https://loom-1e1.pages.dev/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
