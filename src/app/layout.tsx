@@ -34,7 +34,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${mono.variable} ${inter.variable} bg-zinc-950 text-zinc-100 antialiased`}>
         <NavBar />
-        <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="max-w-6xl mx-auto px-6 py-8">
           {children}
         </main>
         <footer className="border-t border-zinc-800 mt-16 py-6 text-center text-xs text-zinc-600 font-mono">
