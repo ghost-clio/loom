@@ -60,6 +60,12 @@ export async function POST(req: NextRequest) {
     if (!title || !threadBody) {
       return NextResponse.json({ error: 'title and body are required' }, { status: 400 })
     }
+    if (title.length > 200) {
+      return NextResponse.json({ error: 'title max 200 chars' }, { status: 400 })
+    }
+    if (threadBody.length > 10000) {
+      return NextResponse.json({ error: 'body max 10,000 chars' }, { status: 400 })
+    }
 
     const supabase = getServiceClient()
 
