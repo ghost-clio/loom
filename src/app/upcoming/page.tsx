@@ -86,8 +86,10 @@ export default function UpcomingPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Failed'); setSubmitting(false); return }
-      setEvents(prev => [...prev, data.data].sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()))
+      // Don't add to visible events — it's pending review
       setShowForm(false)
+      setError('')
+      alert('✅ Event submitted! It will appear once approved.')
       setForm({ title: '', description: '', event_type: 'hackathon', url: '', location: '', prize_pool: '', tags: '', starts_at: '', ends_at: '' })
     } catch {
       setError('Network error')

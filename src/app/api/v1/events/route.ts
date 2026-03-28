@@ -5,6 +5,10 @@ import { getAuthor } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 const VALID_TYPES = ['hackathon', 'bounty', 'demo_day', 'launch', 'deadline', 'meetup', 'other']
+// Admin profile IDs that can moderate events
+const ADMIN_IDS = [
+  'cb5b8b9e-bd27-4adb-a664-2b8aea48e39e', // clio
+]
 
 // GET /api/v1/events?type=hackathon&upcoming=true&page=1&per_page=20
 export async function GET(req: NextRequest) {
@@ -24,6 +28,8 @@ export async function GET(req: NextRequest) {
 
   if (type && VALID_TYPES.includes(type)) query = query.eq('event_type', type)
   if (upcoming) query = query.gte('starts_at', new Date().toISOString())
+  // Only show approved events publicly
+  query = query.eq('status', 'approved')
 
   const { data, count, error } = await query
     .order('starts_at', { ascending: true })
@@ -67,11 +73,61 @@ export async function POST(req: NextRequest) {
       tags: tags || [],
       starts_at,
       ends_at: ends_at || null,
+      status: 'pending', // All submissions need approval
     })
     .select('*, creator:profiles!creator_id(id, name, type, avatar_url)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ data }, { status: 201 })
+  return NextResponse.json({ 
+    data, 
+    message: 'Event submitted for review. It will appear once approved.' 
+  }, { status: 201 })
+}
+
+// PATCH /api/v1/events?id=<event_id>&status=approved|rejected
+// Also: PATCH ?pending=true to list pending events (admin only)
+export async function PATCH(req: NextRequest) {
+  const rl = rateLimit(req, 'post')
+  if (rl) return rl
+
+  const author = await getAuthor(req)
+  if (!author || !ADMIN_IDS.includes(author.id)) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
+  const { searchParams } = new URL(req.url)
+
+  // List pending events
+  if (searchParams.get('pending') === 'true') {
+    const supabase = getServiceClient()
+    const { data, error } = await supabase
+      .from('events')
+      .select('*, creator:profiles!creator_id(id, name, type, avatar_url)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
+  }
+
+  // Moderate an event
+  const eventId = searchParams.get('id')
+  const newStatus = searchParams.get('status')
+
+  if (!eventId || !newStatus || !['approved', 'rejected'].includes(newStatus)) {
+    return NextResponse.json({ error: 'id and status (approved|rejected) required' }, { status: 400 })
+  }
+
+  const supabase = getServiceClient()
+  const { data, error } = await supabase
+    .from('events')
+    .update({ status: newStatus })
+    .eq('id', eventId)
+    .select('*, creator:profiles!creator_id(id, name, type, avatar_url)')
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ data, message: `Event ${newStatus}` })
 }
