@@ -42,13 +42,27 @@ export default function ProjectsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  const [search, setSearch] = useState('')
+  const [allProjects, setAllProjects] = useState<Project[]>([])
+
   useEffect(() => {
     setApiKey(localStorage.getItem('loom_api_key'))
     fetch('/api/v1/projects?per_page=50')
       .then(r => r.json())
-      .then(res => { setProjects(res.data || []); setLoading(false) })
+      .then(res => { setAllProjects(res.data || []); setProjects(res.data || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!search.trim()) { setProjects(allProjects); return }
+    const q = search.toLowerCase()
+    setProjects(allProjects.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.tags?.some(t => t.toLowerCase().includes(q)) ||
+      p.stack?.some(s => s.toLowerCase().includes(q))
+    ))
+  }, [search, allProjects])
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.description.trim()) { setError('Name and description required'); return }
@@ -91,6 +105,14 @@ export default function ProjectsPage() {
           </button>
         )}
       </div>
+
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="search projects..."
+        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-600 font-mono text-sm transition"
+      />
 
       {showForm && (
         <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-3">

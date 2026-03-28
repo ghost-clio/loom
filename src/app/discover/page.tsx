@@ -41,50 +41,42 @@ export default function DiscoverPage() {
     setLoading(true)
     setSearched(true)
     try {
-      const [loomRes, ecosystemRes] = await Promise.allSettled([
-        fetch(`/api/v1/projects?q=${encodeURIComponent(query)}&per_page=10`).then(r => r.json()),
-        fetch(SUPABASE_FN, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: query, limit: 15 }),
-        }).then(r => r.ok ? r.json() : { results: [] }),
-      ])
+      const res = await fetch(SUPABASE_FN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query, limit: 20 }),
+      })
+      const data = res.ok ? await res.json() : { results: [] }
 
-      const loom = loomRes.status === 'fulfilled'
-        ? (loomRes.value.data || []).map((p: ProjectCard) => ({ ...p, source: 'loom' }))
-        : []
+      const ecosystem = (data.results || []).map((p: ColosseumResult) => ({
+        id: `colosseum:${p.slug}`,
+        source: 'colosseum',
+        name: p.name,
+        description: p.oneLiner,
+        repo_url: p.links?.github || null,
+        demo_url: p.links?.demo || p.links?.presentation || null,
+        colosseum_url: p.links?.colosseum || `https://arena.colosseum.org/projects/explore/${p.slug}`,
+        hackathon: p.hackathon?.name || null,
+        tracks: p.tracks?.map((t: { name: string }) => t.name) || [],
+        tags: [...(p.tags?.techTags || []), ...(p.tags?.problemTags || [])].slice(0, 8),
+      }))
 
-      const ecosystem = ecosystemRes.status === 'fulfilled'
-        ? (ecosystemRes.value.results || []).map((p: ColosseumResult) => ({
-            id: `colosseum:${p.slug}`,
-            source: 'colosseum',
-            name: p.name,
-            description: p.oneLiner,
-            repo_url: p.links?.github || null,
-            demo_url: p.links?.demo || p.links?.presentation || null,
-            colosseum_url: p.links?.colosseum || `https://arena.colosseum.org/projects/explore/${p.slug}`,
-            hackathon: p.hackathon?.name || null,
-            tracks: p.tracks?.map((t: { name: string }) => t.name) || [],
-            tags: [...(p.tags?.techTags || []), ...(p.tags?.problemTags || [])].slice(0, 8),
-          }))
-        : []
-
-      setResults({ loom, ecosystem })
+      setResults({ loom: [], ecosystem })
     } catch {
       setResults({ loom: [], ecosystem: [] })
     }
     setLoading(false)
   }
 
-  const total = results.loom.length + results.ecosystem.length
+  const total = results.ecosystem.length
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-12 space-y-8">
       <div className="text-center space-y-2">
         <h1 className="font-mono text-3xl font-bold">discover</h1>
         <p className="text-zinc-400 text-sm">
-          Search 5,400+ projects from the Solana ecosystem.
-          Find tools, protocols, and agents to use in your builds.
+          Search 5,400+ projects from Colosseum hackathons.
+          Find what&apos;s been built before you build it again.
         </p>
       </div>
 
@@ -109,19 +101,10 @@ export default function DiscoverPage() {
         <p className="text-center text-zinc-500 py-8">No results for &quot;{query}&quot;</p>
       )}
 
-      {results.loom.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="font-mono text-lg text-white">On Loom <span className="text-zinc-500 text-sm">({results.loom.length})</span></h2>
-          <div className="grid gap-4">
-            {results.loom.map(p => <LoomCard key={p.id} project={p} />)}
-          </div>
-        </section>
-      )}
-
       {results.ecosystem.length > 0 && (
         <section className="space-y-4">
           <h2 className="font-mono text-lg text-white">
-            Ecosystem <span className="text-zinc-500 text-sm">({results.ecosystem.length} from Colosseum hackathons)</span>
+            {results.ecosystem.length} projects <span className="text-zinc-500 text-sm">from Colosseum hackathons</span>
           </h2>
           <div className="grid gap-4">
             {results.ecosystem.map(p => <EcosystemCard key={p.id} project={p} />)}
